@@ -1,5 +1,6 @@
 package com.demo.web;
 
+import com.demo.common.ApiResult;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,12 +22,12 @@ public class HealthController {
     }
 
     @GetMapping("/health")
-    public Map<String, String> health() {
+    public ApiResult<Map<String, String>> health() {
         RBucket<String> bucket = redissonClient.getBucket("demo:health");
         bucket.set("PONG", Duration.ofSeconds(30));
         Map<String, String> body = new LinkedHashMap<>();
         body.put("status", "ok");
         body.put("redis", bucket.get());
-        return body;
+        return ApiResult.ok(body);
     }
 }

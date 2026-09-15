@@ -22,8 +22,20 @@ mybatis-plus:
     map-underscore-to-camel-case: true
   global-config:
     banner: false
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
 
+# SM2 演示密钥对（生产请外置轮换）
 jwt:
-  # HS256 requires >= 256-bit secret
-  secret: demo-jwt-secret-change-me-please-32bytes
-  expire-ms: 86400000
+  private-key-hex: "00bf1f725980254bc636b6a9944e3f18e74f8f035a2beb1507bfad05713689bb4d"
+  public-key-hex: "049c83f48a0962c7f977503cdd64b042513c64a969070e49df9073b29eacf7c90fe2729afc27adc4575c00973eaf7228cdf14ee47215f11a8af25cebf2cc352c73"
+  expire-ms: 7200000
+  renew-threshold-ms: 1800000
+
+captcha:
+  ttl-seconds: 300
+  width: 130
+  height: 48
+  code-count: 4
