@@ -15,7 +15,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * 过滤器：解析 JWT，写入 ThreadLocal；临近过期时在响应头续期。
+ * Servlet 过滤器（在 Interceptor / Controller 之前执行）。
+ * <p>
+ * 职责：
+ * <ul>
+ *   <li>从 {@code Authorization: Bearer xxx} 取出 JWT</li>
+ *   <li>验签成功则把用户写入 {@link SecurityUtils}（ThreadLocal）</li>
+ *   <li>临近过期时在响应头写 {@code X-New-Token}，前端可自动替换本地 token</li>
+ *   <li>{@code finally} 里必须 {@code clear()}，避免线程池复用导致用户串号</li>
+ * </ul>
+ * 有 token 但无效时这里吞掉异常，交给 {@link AuthInterceptor} 决定是否必须登录。
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
@@ -42,6 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     if (jwtUtil.shouldRenew(token)) {
                         String renewed = jwtUtil.createToken(user);
                         response.setHeader(HEADER_NEW_TOKEN, renewed);
+                        // 让浏览器/axios 能读到自定义响应头
                         response.setHeader("Access-Control-Expose-Headers", HEADER_NEW_TOKEN);
                     }
                 } catch (BizException ignored) {
@@ -54,6 +64,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
     }
 
+    /** 解析 Bearer Token；没有或格式不对返回 null。 */
     private String resolveToken(HttpServletRequest request) {
         String header = request.getHeader(HEADER_AUTHORIZATION);
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {

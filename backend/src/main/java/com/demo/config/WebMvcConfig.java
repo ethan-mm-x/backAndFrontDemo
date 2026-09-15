@@ -6,6 +6,11 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Web MVC 配置：注册登录拦截器，并放开跨域（方便本地 Vite 直连或排查）。
+ * <p>
+ * 注意：{@code X-New-Token} 要放进 exposedHeaders，前端才能读到续期 token。
+ */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 

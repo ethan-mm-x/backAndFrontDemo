@@ -11,6 +11,11 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 健康检查：确认应用存活，并写一条 Redis 证明 Redisson 连通。
+ * <p>
+ * 路径在登录白名单内，无需 Token。
+ */
 @RestController
 @RequestMapping("/api")
 public class HealthController {

@@ -14,6 +14,11 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * 图形验证码：用 Hutool 生成图片，答案用 Redisson 存 Redis（带 TTL），校验后删除（一次性）。
+ * <p>
+ * 必须用 {@link StringCodec}，避免默认编解码把字符串存成带控制字符的二进制，导致前端回传后 JSON 解析失败。
+ */
 @Service
 public class CaptchaService {
 
@@ -27,6 +32,11 @@ public class CaptchaService {
         this.properties = properties;
     }
 
+    /**
+     * 生成验证码。
+     *
+     * @return captchaId（给前端下次提交）、imageBase64（直接当 img src）
+     */
     public Map<String, String> create() {
         LineCaptcha captcha = CaptchaUtil.createLineCaptcha(
                 properties.getWidth(),
@@ -36,6 +46,7 @@ public class CaptchaService {
         );
         String captchaId = IdUtil.fastSimpleUUID();
         RBucket<String> bucket = redissonClient.getBucket(KEY_PREFIX + captchaId, StringCodec.INSTANCE);
+        // 小写存，校验时忽略大小写
         bucket.set(captcha.getCode().toLowerCase(), Duration.ofSeconds(properties.getTtlSeconds()));
 
         Map<String, String> body = new LinkedHashMap<>();
@@ -44,6 +55,9 @@ public class CaptchaService {
         return body;
     }
 
+    /**
+     * 校验验证码并立刻删除（防止重复使用）。
+     */
     public void verifyAndConsume(String captchaId, String captchaCode) {
         if (captchaId == null || captchaCode == null) {
             throw new BizException("验证码不能为空");

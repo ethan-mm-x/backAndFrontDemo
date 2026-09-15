@@ -66,6 +66,8 @@ pnpm dev       # 或 npm run dev
 
 ## 后端关键设计
 
+详细目录、请求链路、接口清单与学习阅读顺序见 **[backend/README.md](backend/README.md)**。
+
 - **过滤器** `JwtAuthFilter`：解析 JWT，写入 ThreadLocal，必要时写 `X-New-Token`
 - **拦截器** `AuthInterceptor`：白名单外必须登录
 - **AOP** `@OperLog`：记录用户操作日志

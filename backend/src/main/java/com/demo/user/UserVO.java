@@ -2,6 +2,9 @@ package com.demo.user;
 
 import java.time.LocalDateTime;
 
+/**
+ * 返回给前端的用户视图：故意不含 password。
+ */
 public class UserVO {
 
     private Long id;

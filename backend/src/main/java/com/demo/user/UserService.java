@@ -11,6 +11,11 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 用户业务：注册（BCrypt 落库）、登录校验、分页、批量删除。
+ * <p>
+ * Controller 只做协议层，真正读写库都在这里。
+ */
 @Service
 public class UserService {
 
@@ -22,6 +27,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /** 用户名唯一校验后插入；密码存 BCrypt 哈希，不是明文。 */
     public void register(String username, String rawPassword) {
         Long cnt = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUsername, username));
         if (cnt != null && cnt > 0) {
@@ -36,6 +42,7 @@ public class UserService {
         userMapper.insert(user);
     }
 
+    /** 查库 + BCrypt matches；成功返回轻量 LoginUser（给签发 JWT 用）。 */
     public LoginUser login(String username, String rawPassword) {
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, username));
         if (user == null || !passwordEncoder.matches(rawPassword, user.getPassword())) {
@@ -44,6 +51,7 @@ public class UserService {
         return new LoginUser(user.getId(), user.getUsername());
     }
 
+    /** 分页查询；自动过滤 deleted=1 的逻辑删除行。 */
     public Page<UserVO> pageUsers(long page, long size, String username) {
         Page<User> p = userMapper.selectPage(
                 new Page<>(page, size),
@@ -56,6 +64,7 @@ public class UserService {
         return voPage;
     }
 
+    /** 批量逻辑删除：底层 UPDATE deleted=1，不是物理 DELETE。 */
     public void batchDelete(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new BizException("请选择要删除的用户");

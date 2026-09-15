@@ -12,7 +12,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 /**
- * 拦截器：受保护接口必须已登录。
+ * Spring MVC 拦截器：保护业务接口。
+ * <p>
+ * 白名单（健康检查、验证码、登录、注册）直接放行；
+ * 其它路径必须已在 Filter 里解析出登录用户，否则返回统一 JSON「未登录」。
+ * <p>
+ * 对照前端：类似 Vue Router 的 {@code beforeEach} 守卫。
  */
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
@@ -32,6 +37,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // 预检请求不拦
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
         }

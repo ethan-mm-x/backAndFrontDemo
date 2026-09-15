@@ -1,7 +1,9 @@
 package com.demo.security;
 
 /**
- * 当前登录用户（放进 JWT claims / ThreadLocal）。
+ * 当前登录用户快照：会放进 JWT payload，也会放进 ThreadLocal。
+ * <p>
+ * 不含密码等敏感字段。
  */
 public class LoginUser {
 

@@ -7,16 +7,27 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.time.LocalDateTime;
 
+/**
+ * 用户表实体，对应 MySQL 表 {@code sys_user}。
+ * <p>
+ * {@code @TableLogic}：删除时改 deleted 字段，查询自动带 {@code deleted=0}。
+ */
 @TableName("sys_user")
 public class User {
 
+    /** 主键自增 */
     @TableId(type = IdType.AUTO)
     private Long id;
+
     private String username;
+
+    /** BCrypt 密文，不要回传给前端列表 */
     private String password;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /** 0 正常，1 已删除 */
     @TableLogic
     private Integer deleted;
 

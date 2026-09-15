@@ -21,7 +21,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 国密 SM2 签名的 JWT（alg=SM2）。claims 含 userId、username。
+ * 国密 SM2 签名的 JWT（header.alg = SM2）。
+ * <p>
+ * 格式仍是三段式 {@code header.payload.signature}（Base64URL），
+ * 但签名算法用 SM2，而不是常见的 HS256/RS256。
+ * payload 里固定带 {@code userId}、{@code username}、{@code iat}、{@code exp}。
  */
 @Component
 public class JwtUtil {
@@ -33,6 +37,9 @@ public class JwtUtil {
         this.properties = properties;
     }
 
+    /**
+     * 启动时加载配置里的 SM2 密钥；非法或不存在则临时生成一对（仅适合本地 Demo）。
+     */
     @PostConstruct
     public void init() {
         if (StrUtil.isNotBlank(properties.getPrivateKeyHex()) && StrUtil.isNotBlank(properties.getPublicKeyHex())) {
@@ -53,6 +60,7 @@ public class JwtUtil {
         this.sm2 = new SM2(priv, pub);
     }
 
+    /** 登录成功后签发 token。 */
     public String createToken(LoginUser user) {
         long now = System.currentTimeMillis();
         long exp = now + properties.getExpireMs();
@@ -75,6 +83,9 @@ public class JwtUtil {
         return content + "." + signPart;
     }
 
+    /**
+     * 验签并解析出登录用户；签名错 / 过期 / 缺字段都会抛 401。
+     */
     public LoginUser parseToken(String token) {
         String[] parts = split(token);
         String content = parts[0] + "." + parts[1];
@@ -96,6 +107,9 @@ public class JwtUtil {
         return new LoginUser(userId, username);
     }
 
+    /**
+     * 是否需要续期：仍有效，但剩余时间 ≤ {@code jwt.renew-threshold-ms}。
+     */
     public boolean shouldRenew(String token) {
         try {
             String[] parts = split(token);

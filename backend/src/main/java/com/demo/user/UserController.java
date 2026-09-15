@@ -14,6 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 用户管理接口（需登录）。
+ * <p>
+ * {@code @Validated} 让方法参数上的 {@code @Min}/{@code @Max} 生效；
+ * {@code @OperLog} 由 AOP 切面记录操作日志。
+ */
 @Validated
 @RestController
 @RequestMapping("/api/users")
@@ -25,6 +31,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    /** 分页列表；username 可选，模糊匹配。返回不含密码的 UserVO。 */
     @OperLog("分页查询用户")
     @GetMapping
     public ApiResult<Page<UserVO>> page(
@@ -35,6 +42,7 @@ public class UserController {
         return ApiResult.ok(userService.pageUsers(page, size, username));
     }
 
+    /** 批量逻辑删除（MyBatis-Plus {@code @TableLogic}）。 */
     @OperLog("批量删除用户")
     @DeleteMapping("/batch")
     public ApiResult<Void> batchDelete(@Valid @RequestBody BatchDeleteRequest req) {

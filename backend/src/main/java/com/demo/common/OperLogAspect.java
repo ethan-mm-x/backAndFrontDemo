@@ -9,6 +9,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+/**
+ * AOP 切面：拦截带 {@link OperLog} 的方法，记录操作人、耗时、参数或错误。
+ * <p>
+ * 对照前端：类似给函数包一层装饰器做埋点。
+ */
 @Aspect
 @Component
 public class OperLogAspect {
