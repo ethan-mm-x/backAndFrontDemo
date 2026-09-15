@@ -1,0 +1,12 @@
+:root {
+  color: #1a1a1a;
+  background: #f5f7fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}

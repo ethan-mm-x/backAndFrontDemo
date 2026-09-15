@@ -1,0 +1,62 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup script (project-local)
+# ----------------------------------------------------------------------------
+set -e
+BASE_DIR=$(cd "$(dirname "$0")" && pwd)
+WRAPPER_JAR="$BASE_DIR/.mvn/wrapper/maven-wrapper.jar"
+WRAPPER_PROPS="$BASE_DIR/.mvn/wrapper/maven-wrapper.properties"
+MAVEN_USER_HOME="${MAVEN_USER_HOME:-$HOME/.m2}"
+WRAPPER_DIR="$MAVEN_USER_HOME/wrapper/dists"
+
+if [ ! -f "$WRAPPER_JAR" ]; then
+  echo "Missing $WRAPPER_JAR" >&2
+  exit 1
+fi
+
+distributionUrl=$(grep -E '^distributionUrl=' "$WRAPPER_PROPS" | cut -d= -f2-)
+if [ -z "$distributionUrl" ]; then
+  echo "distributionUrl missing in maven-wrapper.properties" >&2
+  exit 1
+fi
+
+zipName=$(basename "$distributionUrl")
+distKey=$(basename "$distributionUrl" .zip)
+hash=$(printf '%s' "$distributionUrl" | shasum -a 256 | cut -d' ' -f1)
+distDir="$WRAPPER_DIR/$distKey/$hash"
+
+find_mvn() {
+  find "$distDir" -type f -path '*/bin/mvn' 2>/dev/null | head -n 1
+}
+
+MVN_BIN=$(find_mvn || true)
+if [ -z "$MVN_BIN" ] || [ ! -x "$MVN_BIN" ]; then
+  mkdir -p "$distDir"
+  zipFile="$distDir/$zipName"
+  echo "Downloading Maven from $distributionUrl ..."
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL -o "$zipFile" "$distributionUrl"
+  else
+    wget -q -O "$zipFile" "$distributionUrl"
+  fi
+  unzip -qo "$zipFile" -d "$distDir"
+  rm -f "$zipFile"
+  MVN_BIN=$(find_mvn)
+fi
+
+if [ -z "$MVN_BIN" ] || [ ! -x "$MVN_BIN" ]; then
+  echo "Unable to locate Maven binary under $distDir" >&2
+  exit 1
+fi
+
+if [ -z "${JAVA_HOME:-}" ] && command -v /usr/libexec/java_home >/dev/null 2>&1; then
+  JAVA_HOME=$(/usr/libexec/java_home)
+  export JAVA_HOME
+fi
+
+PROJECT_SETTINGS="$BASE_DIR/.mvn/settings.xml"
+if [ -f "$PROJECT_SETTINGS" ]; then
+  exec "$MVN_BIN" -s "$PROJECT_SETTINGS" "$@"
+fi
+
+exec "$MVN_BIN" "$@"
