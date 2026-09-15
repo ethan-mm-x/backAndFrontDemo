@@ -11,7 +11,7 @@ public class LoginRequest {
     @NotBlank(message = "用户名不能为空")
     private String username;
 
-    /** 明文密码（仅传输，落库前会 BCrypt） */
+    /** SM2 公钥加密后的密码密文（hex） */
     @NotBlank(message = "密码不能为空")
     private String password;
 

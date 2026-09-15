@@ -43,9 +43,10 @@ mvn -s .mvn/settings.xml spring-boot:run
 ```
 
 - 服务：http://localhost:8080
-- 公开接口：`/api/health`、`/api/auth/captcha`、`/api/auth/login`、`/api/auth/register`
+- 公开接口：`/api/health`、`/api/auth/public-key`、`/api/auth/captcha`、`/api/auth/login`、`/api/auth/register`
 - 需登录：`/api/users`、`/api/auth/me`（Header：`Authorization: Bearer <token>`）
 - Token 临近过期时响应头返回 `X-New-Token` 用于续期
+- 登录/注册的 `password` 为 SM2 密文；落库仍为 BCrypt
 
 ## 3. 启动前端
 
@@ -74,5 +75,5 @@ pnpm dev       # 或 npm run dev
 - **全局异常** `GlobalExceptionHandler` + `BizException`
 - **参数校验** Jakarta Validation（`@Valid` / `@NotBlank` 等）
 - **当前用户** `SecurityUtils.getCurrentUser()`
-- **密码** BCrypt 加密落库
+- **密码** 传输 SM2 加密，落库 BCrypt
 - **JWT** 国密 SM2 签名，claims 含 `userId`、`username`

@@ -10,6 +10,10 @@ export function fetchCaptcha() {
   return http.get<ApiResult<{ captchaId: string; imageBase64: string }>>('/auth/captcha')
 }
 
+export function fetchPublicKey() {
+  return http.get<ApiResult<{ publicKeyHex: string }>>('/auth/public-key')
+}
+
 export function register(data: {
   username: string
   password: string

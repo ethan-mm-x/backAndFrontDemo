@@ -27,8 +27,11 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /** 用户名唯一校验后插入；密码存 BCrypt 哈希，不是明文。 */
+    /** 解密后的明文密码入库：校验长度后 BCrypt 哈希。 */
     public void register(String username, String rawPassword) {
+        if (rawPassword == null || rawPassword.length() < 6 || rawPassword.length() > 64) {
+            throw new BizException("密码长度需在 6-64 之间");
+        }
         Long cnt = userMapper.selectCount(new LambdaQueryWrapper<User>().eq(User::getUsername, username));
         if (cnt != null && cnt > 0) {
             throw new BizException("用户名已存在");

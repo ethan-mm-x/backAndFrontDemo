@@ -62,6 +62,7 @@ sequenceDiagram
 | 方法 | 路径 | 类.方法 |
 | --- | --- | --- |
 | GET | `/api/health` | `HealthController.health` |
+| GET | `/api/auth/public-key` | `AuthController.publicKey` |
 | GET | `/api/auth/captcha` | `AuthController.captcha` |
 | POST | `/api/auth/register` | `AuthController.register` |
 | POST | `/api/auth/login` | `AuthController.login` |
@@ -75,6 +76,8 @@ sequenceDiagram
 | DELETE | `/api/users/batch` | `UserController.batchDelete` |
 
 用户数据表：`demo.sys_user`（密码是 BCrypt 密文；`deleted=1` 表示逻辑删除）。
+
+登录/注册时 HTTP 里的 `password` 是 **SM2 公钥加密后的 hex**，不是明文。后端解密后再 BCrypt。这不能替代 HTTPS，只是 HTTP Demo 下的传输保护。
 
 ## 4. 建议阅读顺序
 

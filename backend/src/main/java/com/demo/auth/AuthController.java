@@ -35,25 +35,35 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
     }
 
+    /** 下发 SM2 公钥：前端用它加密登录/注册密码，后端用私钥解密。 */
+    @GetMapping("/public-key")
+    public ApiResult<Map<String, String>> publicKey() {
+        Map<String, String> data = new LinkedHashMap<>();
+        data.put("publicKeyHex", jwtUtil.getPublicKeyHex());
+        return ApiResult.ok(data);
+    }
+
     /** 获取图形验证码：返回 captchaId + imageBase64，答案存在 Redis。 */
     @GetMapping("/captcha")
     public ApiResult<Map<String, String>> captcha() {
         return ApiResult.ok(captchaService.create());
     }
 
-    /** 注册：先校验并消费验证码，再 BCrypt 加密密码写入 sys_user。 */
+    /** 注册：先校验验证码，SM2 解密密码后再 BCrypt 落库。 */
     @PostMapping("/register")
     public ApiResult<Void> register(@Valid @RequestBody RegisterRequest req) {
         captchaService.verifyAndConsume(req.getCaptchaId(), req.getCaptchaCode());
-        userService.register(req.getUsername().trim(), req.getPassword());
+        String rawPassword = jwtUtil.decryptPassword(req.getPassword());
+        userService.register(req.getUsername().trim(), rawPassword);
         return ApiResult.ok();
     }
 
-    /** 登录：校验验证码与账号密码，签发 SM2 JWT。 */
+    /** 登录：校验验证码，SM2 解密密码后与库中 BCrypt 比对，签发 JWT。 */
     @PostMapping("/login")
     public ApiResult<Map<String, Object>> login(@Valid @RequestBody LoginRequest req) {
         captchaService.verifyAndConsume(req.getCaptchaId(), req.getCaptchaCode());
-        LoginUser user = userService.login(req.getUsername().trim(), req.getPassword());
+        String rawPassword = jwtUtil.decryptPassword(req.getPassword());
+        LoginUser user = userService.login(req.getUsername().trim(), rawPassword);
         String token = jwtUtil.createToken(user);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);

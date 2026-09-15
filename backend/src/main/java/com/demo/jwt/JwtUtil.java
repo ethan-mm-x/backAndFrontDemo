@@ -4,6 +4,7 @@ import cn.hutool.core.codec.Base64;
 import cn.hutool.core.util.HexUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.asymmetric.KeyType;
 import cn.hutool.crypto.asymmetric.SM2;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -11,6 +12,7 @@ import com.demo.common.BizException;
 import com.demo.config.JwtProperties;
 import com.demo.security.LoginUser;
 import jakarta.annotation.PostConstruct;
+import org.bouncycastle.crypto.engines.SM2Engine;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.springframework.stereotype.Component;
@@ -21,11 +23,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 国密 SM2 签名的 JWT（header.alg = SM2）。
+ * 国密 SM2：既用来签 JWT，也用来解密登录/注册传来的密码密文。
  * <p>
- * 格式仍是三段式 {@code header.payload.signature}（Base64URL），
- * 但签名算法用 SM2，而不是常见的 HS256/RS256。
- * payload 里固定带 {@code userId}、{@code username}、{@code iat}、{@code exp}。
+ * JWT 仍是三段式 {@code header.payload.signature}，alg=SM2。
+ * 密码传输：前端用公钥加密，这里用私钥解密后再交给 BCrypt。
  */
 @Component
 public class JwtUtil {
@@ -45,6 +46,7 @@ public class JwtUtil {
         if (StrUtil.isNotBlank(properties.getPrivateKeyHex()) && StrUtil.isNotBlank(properties.getPublicKeyHex())) {
             try {
                 this.sm2 = new SM2(properties.getPrivateKeyHex(), properties.getPublicKeyHex());
+                this.sm2.setMode(SM2Engine.Mode.C1C3C2);
                 // 试签一次，密钥非法则回退生成
                 sm2.sign("ping".getBytes(StandardCharsets.UTF_8));
                 return;
@@ -58,6 +60,41 @@ public class JwtUtil {
         properties.setPrivateKeyHex(priv);
         properties.setPublicKeyHex(pub);
         this.sm2 = new SM2(priv, pub);
+        this.sm2.setMode(SM2Engine.Mode.C1C3C2);
+    }
+
+    /** 给前端加密密码用的 uncompressed 公钥 hex（04 开头）。 */
+    public String getPublicKeyHex() {
+        return properties.getPublicKeyHex();
+    }
+
+    /**
+     * 解密前端 SM2 密文（hex，C1C3C2）。
+     * sm-crypto 的密文常常不带 04 前缀，这里兼容补上。
+     */
+    public String decryptPassword(String cipherHex) {
+        if (StrUtil.isBlank(cipherHex)) {
+            throw new BizException("密码不能为空");
+        }
+        String hex = cipherHex.trim();
+        try {
+            return decryptHex(hex);
+        } catch (Exception first) {
+            if (!hex.startsWith("04")) {
+                try {
+                    return decryptHex("04" + hex);
+                } catch (Exception ignored) {
+                    // fall through
+                }
+            }
+            throw new BizException("密码解密失败，请刷新页面后重试");
+        }
+    }
+
+    private String decryptHex(String hex) {
+        byte[] cipher = HexUtil.decodeHex(hex);
+        byte[] plain = sm2.decrypt(cipher, KeyType.PrivateKey);
+        return new String(plain, StandardCharsets.UTF_8);
     }
 
     /** 登录成功后签发 token。 */

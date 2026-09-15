@@ -2,13 +2,15 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { fetchCaptcha, login } from '../api/user'
+import { fetchCaptcha, fetchPublicKey, login } from '../api/user'
 import { setToken } from '../api/http'
+import { encryptPassword } from '../api/sm2'
 
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const captchaImg = ref('')
+const publicKeyHex = ref('')
 const form = reactive({
   username: '',
   password: '',
@@ -17,16 +19,24 @@ const form = reactive({
 })
 
 async function loadCaptcha() {
-  const { data } = await fetchCaptcha()
-  form.captchaId = data.data.captchaId
-  captchaImg.value = data.data.imageBase64
+  const [{ data: captcha }, { data: key }] = await Promise.all([fetchCaptcha(), fetchPublicKey()])
+  form.captchaId = captcha.data.captchaId
+  captchaImg.value = captcha.data.imageBase64
+  publicKeyHex.value = key.data.publicKeyHex
   form.captchaCode = ''
 }
 
 async function onSubmit() {
+  if (!publicKeyHex.value) {
+    ElMessage.error('公钥未就绪，请刷新验证码后重试')
+    return
+  }
   loading.value = true
   try {
-    const { data } = await login({ ...form })
+    const { data } = await login({
+      ...form,
+      password: encryptPassword(form.password, publicKeyHex.value),
+    })
     setToken(data.data.token)
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/users'

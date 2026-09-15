@@ -14,7 +14,7 @@ import java.util.Set;
 /**
  * Spring MVC 拦截器：保护业务接口。
  * <p>
- * 白名单（健康检查、验证码、登录、注册）直接放行；
+ * 白名单（健康检查、验证码、公钥、登录、注册）直接放行；
  * 其它路径必须已在 Filter 里解析出登录用户，否则返回统一 JSON「未登录」。
  * <p>
  * 对照前端：类似 Vue Router 的 {@code beforeEach} 守卫。
@@ -25,6 +25,7 @@ public class AuthInterceptor implements HandlerInterceptor {
     private static final Set<String> WHITE_LIST = Set.of(
             "/api/health",
             "/api/auth/captcha",
+            "/api/auth/public-key",
             "/api/auth/login",
             "/api/auth/register"
     );

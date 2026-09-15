@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * 注册请求体。{@code @Size} 限制用户名/密码长度。
+ * 注册请求体。password 为 SM2 密文 hex，明文长度在解密后校验。
  */
 public class RegisterRequest {
 
@@ -13,9 +13,9 @@ public class RegisterRequest {
     @Size(min = 3, max = 32, message = "用户名长度需在 3-32 之间")
     private String username;
 
-    /** 明文密码，6～64 位；服务端会 BCrypt 后再入库 */
+    /** SM2 公钥加密后的密码密文（hex） */
     @NotBlank(message = "密码不能为空")
-    @Size(min = 6, max = 64, message = "密码长度需在 6-64 之间")
+    @Size(max = 1024, message = "密码密文过长")
     private String password;
 
     /** 验证码 id */
