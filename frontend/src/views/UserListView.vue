@@ -48,6 +48,15 @@ async function onBatchDelete() {
   await load()
 }
 
+async function onDeleteRow(row: { id: number; username: string }) {
+  await ElMessageBox.confirm(`确认删除用户「${row.username}」？`, '提示', {
+    type: 'warning',
+  })
+  await batchDeleteUsers([row.id])
+  ElMessage.success('删除成功')
+  await load()
+}
+
 function logout() {
   clearToken()
   router.push('/login')
@@ -80,6 +89,11 @@ onMounted(load)
       <el-table-column prop="id" label="ID" width="90" />
       <el-table-column prop="username" label="用户名" />
       <el-table-column prop="createdAt" label="创建时间" width="200" />
+      <el-table-column label="操作" width="100" fixed="right">
+        <template #default="{ row }">
+          <el-button link type="danger" @click="onDeleteRow(row)">删除</el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <div class="pager">
