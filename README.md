@@ -124,7 +124,34 @@ cd backend
 
 概念说明见 [backend/ak和sk.md](backend/ak和sk.md)。
 
-## 5. Docker Compose 整包（上服务器）
+## 5. mfx Spring Boot Starter（调用方 SDK）
+
+仓库模块 [`mfx-spring-boot-starter`](mfx-spring-boot-starter/)：基于 **Spring Boot 3.2.4**，封装与上面约定一致的 AK/SK HTTP 客户端，使用方注入 `MfxApiService` 即可 `get` / `post`。
+
+```bash
+cd mfx-spring-boot-starter && mvn -s .mvn/settings.xml -q clean install
+```
+
+使用方依赖 `com.mfx:mfx-spring-boot-starter:0.0.1-SNAPSHOT`，配置：
+
+```yaml
+mfx:
+  base-url: http://localhost:8080
+  access-key: demo-ak-001
+  secret-key: demo-sk-please-change-me
+```
+
+```java
+@Autowired
+private MfxApiService mfxApiService;
+
+mfxApiService.get("/api/open/echo", Map.of("name", "world"));
+mfxApiService.post("/api/open/message", "{\"title\":\"ping\",\"content\":\"from-mfx\"}");
+```
+
+完整说明见 [mfx-spring-boot-starter/README.md](mfx-spring-boot-starter/README.md)。
+
+## 6. Docker Compose 整包（上服务器）
 
 仓库已带 `backend/Dockerfile` 与 compose 中的 `backend` 服务。把整仓拷到服务器后：
 
@@ -141,12 +168,12 @@ curl http://localhost:8080/api/health
 
 本地开发仍可只起依赖：`docker compose up -d mysql redis`，后端用 Maven 跑。
 
-## 6. 联调建议
+## 7. 联调建议
 
 1. 打开注册页创建用户（需图形验证码）
 2. 登录后进入用户列表
 3. 勾选用户可批量删除
-4. 用 `scripts/aksk-demo.sh` 验证开放 API 签名
+4. 用 `scripts/aksk-demo.sh` 或 `MfxApiService` 验证开放 API 签名
 
 ## 后端关键设计
 
@@ -162,3 +189,4 @@ curl http://localhost:8080/api/health
 - **密码** 传输 SM2 加密，落库 BCrypt
 - **JWT** 国密 SM2 签名，claims 含 `userId`、`username`
 - **开放 API** 国密 HMAC-SM3 的 AK/SK 签名
+- **调用方 SDK** `mfx-spring-boot-starter`：自动签名的 `MfxApiService`
