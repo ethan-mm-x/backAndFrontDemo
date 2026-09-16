@@ -40,6 +40,17 @@ captcha:
   height: 48
   code-count: 4
 
+# 调用对方 WJZ HTTPS API（SignApiService）
+wjz:
+  aksk:
+    enabled: true
+    access-key: ak-demo-001
+    secret-key: sk-demo-secret-please-change
+    base-url: https://172.16.22.148:8443
+    skip-ssl-verify: true
+    connect-timeout-ms: 5000
+    read-timeout-ms: 15000
+
 # 开放 API：AK/SK + 国密 HMAC-SM3（生产请外置并轮换）
 # 学习说明见 backend/README.md 第 6 节；绑定类：com.demo.aksk.AkSkProperties
 aksk:

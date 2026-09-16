@@ -2,13 +2,24 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-  <!-- Project-local settings so builds are not blocked by private Nexus mirrors. -->
+  <!--
+    拉 com.wjz 等公司 Nexus 依赖时，请用本机 ~/.m2/settings.xml（含账号）：
+      ./mvnw -DskipTests compile
+    本文件仅作无 Nexus 时的 Central 兜底，且勿把 Nexus 密码写进仓库。
+  -->
   <mirrors>
+    <mirror>
+      <id>maven-default-http-blocker</id>
+      <mirrorOf>external:dummy:*</mirrorOf>
+      <name>Disable default HTTP blocker</name>
+      <url>http://0.0.0.0/</url>
+      <blocked>false</blocked>
+    </mirror>
     <mirror>
       <id>central-mirror</id>
       <name>Maven Central</name>
       <url>https://repo.maven.apache.org/maven2</url>
-      <mirrorOf>*</mirrorOf>
+      <mirrorOf>*,!snapshots</mirrorOf>
     </mirror>
   </mirrors>
 </settings>

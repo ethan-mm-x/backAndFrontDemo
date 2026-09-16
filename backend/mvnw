@@ -54,9 +54,10 @@ if [ -z "${JAVA_HOME:-}" ] && command -v /usr/libexec/java_home >/dev/null 2>&1;
   export JAVA_HOME
 fi
 
-PROJECT_SETTINGS="$BASE_DIR/.mvn/settings.xml"
-if [ -f "$PROJECT_SETTINGS" ]; then
-  exec "$MVN_BIN" -s "$PROJECT_SETTINGS" "$@"
+# 默认用本机 ~/.m2/settings.xml（含 Nexus 账号）。
+# 仅当显式指定时才用项目 settings：MAVEN_PROJECT_SETTINGS=1 ./mvnw ...
+if [ "${MAVEN_PROJECT_SETTINGS:-}" = "1" ] && [ -f "$BASE_DIR/.mvn/settings.xml" ]; then
+  exec "$MVN_BIN" -s "$BASE_DIR/.mvn/settings.xml" "$@"
 fi
 
 exec "$MVN_BIN" "$@"

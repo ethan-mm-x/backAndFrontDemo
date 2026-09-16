@@ -6,7 +6,7 @@ Spring Boot + Vue3 全栈 Demo：用户注册/登录（图形验证码 + Redis�
 
 | 端 | 技术 |
 | --- | --- |
-| 后端 | Java 17+、Spring Boot 3.5、MyBatis-Plus、Flyway、Redisson、Hutool SM2/SM3/验证码、BCrypt |
+| 后端 | Java 17+、Spring Boot 3.2.4、MyBatis-Plus、Flyway、Redisson、Hutool SM2/SM3/验证码、BCrypt |
 | 前端 | Vue 3、Vite、TypeScript、Axios、Element Plus、Vue Router |
 | 基础设施 | MySQL 8、Redis、可选后端镜像（Docker Compose） |
 
