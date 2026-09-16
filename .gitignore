@@ -23,3 +23,6 @@ frontend/.vite/
 *.local
 .tools/
 mfx-spring-boot-starter/.mvn/settings-deploy.xml
+deploy/.env
+deploy/demo-images.tar
+*.tar

@@ -1,0 +1,6 @@
+# 开放 API 容器环境：AK/SK 从环境变量读取，避免改镜像
+aksk:
+  clients:
+    - access-key: ${AKSK_ACCESS_KEY:demo-ak-001}
+      secret-key: ${AKSK_SECRET_KEY:demo-sk-please-change-me}
+      name: ${AKSK_CLIENT_NAME:demo-client}

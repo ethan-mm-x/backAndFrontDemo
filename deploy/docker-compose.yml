@@ -1,14 +1,17 @@
+# 服务器部署用：无源码、不 build。
+# 使用前请先 docker load -i demo-images.tar
+# 密钥/密码用同目录 .env（复制 .env.example，勿提交真实密钥）
+
 services:
   mysql:
     image: mysql:8.0
     container_name: demo-mysql
-    ports:
-      - "3306:3306"
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
       MYSQL_DATABASE: demo
       MYSQL_USER: demo
-      MYSQL_PASSWORD: demo123
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-demo123}
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mysql_data:/var/lib/mysql
@@ -17,37 +20,35 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+    # 不映射 3306 到宿主机，仅容器网内访问
 
   redis:
     image: redis:7
     container_name: demo-redis
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20
+    # 不映射 6379 到宿主机
 
-  # 后端 API（含 JWT 登录 + 国密 AK/SK 开放接口）
-  # 本地只起依赖：docker compose up -d mysql redis
-  # 本机构建镜像：./scripts/pack-images.sh
   backend:
-    build: ./backend
     image: demo-backend:0.0.1
     container_name: demo-backend
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
       SPRING_DATASOURCE_USERNAME: demo
-      SPRING_DATASOURCE_PASSWORD: demo123
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-demo123}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: "6379"
-      AKSK_ACCESS_KEY: demo-ak-001
-      AKSK_SECRET_KEY: demo-sk-please-change-me
-      AKSK_CLIENT_NAME: demo-client
+      AKSK_ACCESS_KEY: ${AKSK_ACCESS_KEY:-demo-ak-001}
+      AKSK_SECRET_KEY: ${AKSK_SECRET_KEY:-demo-sk-please-change-me}
+      AKSK_CLIENT_NAME: ${AKSK_CLIENT_NAME:-demo-client}
     depends_on:
       mysql:
         condition: service_healthy
