@@ -128,11 +128,16 @@ cd backend
 
 仓库模块 [`mfx-spring-boot-starter`](mfx-spring-boot-starter/)：基于 **Spring Boot 3.2.4**，封装与上面约定一致的 AK/SK HTTP 客户端，使用方注入 `MfxApiService` 即可 `get` / `post`。
 
+**Maven 坐标**：`com.mfx:mfx-spring-boot-starter:0.0.1-SNAPSHOT`  
+已发布到公司 Nexus Snapshots（`http://10.126.138.142:8081/nexus/content/repositories/snapshots`），他人可直接依赖拉取；仓库与鉴权配置见 [mfx-spring-boot-starter/README.md](mfx-spring-boot-starter/README.md)。
+
+本地安装：
+
 ```bash
 cd mfx-spring-boot-starter && mvn -s .mvn/settings.xml -q clean install
 ```
 
-使用方依赖 `com.mfx:mfx-spring-boot-starter:0.0.1-SNAPSHOT`，配置：
+使用方配置：
 
 ```yaml
 mfx:
@@ -149,7 +154,7 @@ mfxApiService.get("/api/open/echo", Map.of("name", "world"));
 mfxApiService.post("/api/open/message", "{\"title\":\"ping\",\"content\":\"from-mfx\"}");
 ```
 
-完整说明见 [mfx-spring-boot-starter/README.md](mfx-spring-boot-starter/README.md)。
+完整对接文档（坐标、Nexus 仓库、发布步骤）见 [mfx-spring-boot-starter/README.md](mfx-spring-boot-starter/README.md)。
 
 ## 6. Docker Compose 整包（上服务器）
 

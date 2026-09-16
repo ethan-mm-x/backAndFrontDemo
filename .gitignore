@@ -22,3 +22,4 @@ frontend/.vite/
 .env.local
 *.local
 .tools/
+mfx-spring-boot-starter/.mvn/settings-deploy.xml

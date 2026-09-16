@@ -2,16 +2,59 @@
 
 Spring Boot **3.2.4** Starter：封装符合本仓库开放 API 约定的 **国密 AK/SK（HMAC-SM3）** HTTP 客户端，提供可注入的 `MfxApiService`。
 
-## 安装到本地仓库
+## Maven 坐标
 
-```bash
-cd mfx-spring-boot-starter
-mvn -s .mvn/settings.xml -q clean install
+| 项 | 值 |
+| --- | --- |
+| groupId | `com.mfx` |
+| artifactId | `mfx-spring-boot-starter` |
+| version | `0.0.1-SNAPSHOT` |
+| 仓库 | 公司 Nexus Snapshots |
+
+Nexus Browse 路径示例：`Snapshots/com/mfx/mfx-spring-boot-starter/0.0.1-SNAPSHOT/`
+
+仓库地址：
+
+```text
+http://10.126.138.142:8081/nexus/content/repositories/snapshots
 ```
 
 ## 使用方接入
 
-### 1. 依赖
+### 1. 配置仓库
+
+在使用方 `pom.xml`（或父 POM）中增加 snapshots 仓库：
+
+```xml
+<repositories>
+  <repository>
+    <id>nexus-snapshots</id>
+    <url>http://10.126.138.142:8081/nexus/content/repositories/snapshots</url>
+    <snapshots>
+      <enabled>true</enabled>
+    </snapshots>
+    <releases>
+      <enabled>false</enabled>
+    </releases>
+  </repository>
+</repositories>
+```
+
+若公司 Nexus 拉取也需要账号，在本机 `~/.m2/settings.xml` 增加（**勿把真实密码提交到 Git**）：
+
+```xml
+<servers>
+  <server>
+    <id>nexus-snapshots</id>
+    <username>YOUR_USERNAME</username>
+    <password>YOUR_PASSWORD</password>
+  </server>
+</servers>
+```
+
+`<server><id>` 必须与上面 `<repository><id>` 一致。
+
+### 2. 依赖
 
 ```xml
 <dependency>
@@ -21,9 +64,9 @@ mvn -s .mvn/settings.xml -q clean install
 </dependency>
 ```
 
-使用方 Spring Boot 建议 3.2.x（与本 Starter 对齐）；更高 minor 一般也可，需自行验证。
+使用方 Spring Boot 建议 **3.2.x**（与本 Starter 对齐）；更高 minor 一般也可，需自行验证。
 
-### 2. 配置
+### 3. 配置
 
 ```yaml
 mfx:
@@ -35,9 +78,9 @@ mfx:
   read-timeout: 10s
 ```
 
-密钥须与服务端 `aksk.clients` 一致。关闭：`mfx.enabled=false`。
+`access-key` / `secret-key` 须与开放 API 服务端 `aksk.clients` 一致。关闭：`mfx.enabled=false`。
 
-### 3. 注入调用
+### 4. 注入调用
 
 ```java
 @Service
@@ -64,6 +107,40 @@ public class OpenApiCaller {
         );
     }
 }
+```
+
+## 维护者：发布到 Nexus
+
+1. 复制部署 settings（含账号，已 gitignore）：
+
+```bash
+cd mfx-spring-boot-starter
+cp .mvn/settings-deploy.xml.example .mvn/settings-deploy.xml
+# 编辑 settings-deploy.xml，填入 Nexus 密码
+```
+
+2. **推荐**使用仓库脚本发布（对 Nexus 2.x 更稳，避免 `mvn deploy` 的 `NoHttpResponseException`）：
+
+```bash
+# 在仓库根目录
+./scripts/deploy-mfx-nexus.sh
+```
+
+或尝试 Maven 原生部署（部分网络环境下可能失败）：
+
+```bash
+cd mfx-spring-boot-starter
+mvn -s .mvn/settings-deploy.xml clean deploy -DskipTests
+```
+
+不要用带 `mirrorOf=*` 且未排除 `nexus-snapshots` 的 settings 做 deploy。
+
+3. 在 Nexus 界面确认：`Snapshots` → Browse Storage → `com/mfx/mfx-spring-boot-starter/`
+
+本地仅安装（不推 Nexus）仍可用：
+
+```bash
+mvn -s .mvn/settings.xml -q clean install
 ```
 
 ## 签名约定
