@@ -1,5 +1,6 @@
-# Backend
+# Maven
 backend/target/
+mfx-spring-boot-starter/target/
 *.class
 *.jar
 !backend/.mvn/wrapper/maven-wrapper.jar
