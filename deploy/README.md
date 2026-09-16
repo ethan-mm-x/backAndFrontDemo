@@ -25,9 +25,13 @@ chmod +x scripts/pack-images.sh
 ./scripts/pack-images.sh
 ```
 
-生成 `deploy/demo-images.tar`（通常几十～一两百 MB 级，远小于带 MySQL 的 1GB+）。
+生成 `deploy/demo-images.tar`（通常一两百 MB 级）。
 
-改了后端代码 / Dockerfile 才需要重新打包；只改服务器 `.env` 不用重打。
+**重要：** 脚本默认按 `linux/amd64` 打包。若在 Apple Silicon Mac 上不指定平台，镜像在 x86 服务器会报 `exec format error`。
+
+服务器可用 `uname -m` 确认：`x86_64` → amd64。
+
+改了后端代码 / Dockerfile 才需要重新打包；只改服务器密钥不用重打。
 
 ---
 
@@ -53,11 +57,10 @@ scp deploy/demo-images.tar deploy/docker-compose.yml deploy/.env.example deploy/
 
 ```bash
 cd /opt/demo
-cp .env.example .env
-vim .env   # 设置 AKSK_SECRET_KEY（与调用方 SK 一致）
-
-chmod +x load-and-up.sh
-./load-and-up.sh
+# 推荐（兼容本机 docker-compose）
+docker load -i demo-images.tar
+docker-compose up -d
+# 或: ./load-and-up.sh
 ```
 
 验活：

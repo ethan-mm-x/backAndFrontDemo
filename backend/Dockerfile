@@ -1,4 +1,5 @@
-# 多阶段构建：本地/服务器均可 docker compose up --build
+# 请用 scripts/pack-images.sh 构建（带 --platform linux/amd64）
+# 避免 Apple Silicon 打出的 arm64 镜像在 x86 服务器上出现 exec format error
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
