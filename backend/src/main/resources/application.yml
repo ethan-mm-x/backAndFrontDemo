@@ -41,9 +41,12 @@ captcha:
   code-count: 4
 
 # 开放 API：AK/SK + 国密 HMAC-SM3（生产请外置并轮换）
+# 学习说明见 backend/README.md 第 6 节；绑定类：com.demo.aksk.AkSkProperties
 aksk:
+  # 时钟偏差容忍（秒）：超出则拒绝对过期/重放请求
   skew-seconds: 300
   clients:
+    # access-key 会出现在请求头；secret-key 只用于算签，永不上传
     - access-key: demo-ak-001
       secret-key: demo-sk-please-change-me
       name: demo-client

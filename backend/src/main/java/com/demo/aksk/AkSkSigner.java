@@ -13,28 +13,38 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * 国密 AK/SK 签名：HMAC-SM3。
+ * 国密 AK/SK 签名工具（纯函数，无 Spring 依赖）。
  * <p>
- * 待签串：
+ * <b>客户端和服务端必须共用这一套规则</b>，差一个换行、query 排序不同，验签就会失败。
+ * <p>
+ * 待签串（六行，用 {@code \n} 连接）：
  * <pre>
- * METHOD\n
- * PATH\n
- * canonicalQuery\n
- * timestamp\n
- * nonce\n
- * sm3Hex(body)
+ * METHOD          // 大写，如 GET / POST
+ * PATH            // 不含 ?query，如 /api/open/echo
+ * canonicalQuery  // query 按 key 排序后的 k=v&amp;...；没有则为空串
+ * timestamp       // Unix 秒，字符串形式
+ * nonce           // 随机串，防重放
+ * sm3Hex(body)    // 原始 body 字节的 SM3 hex；无 body 按空字节
  * </pre>
- * 空 body 的 SM3 按空字节计算。
+ * 签名：{@code signature = HMAC-SM3(SK, stringToSign)}，结果为小写 hex。
+ * <p>
+ * 对照前端：就像约定「请求指纹」的字符串模板；云厂商文档里的 Canonical Request 就是这类东西。
  */
 public final class AkSkSigner {
 
     private AkSkSigner() {
     }
 
+    /**
+     * 把 {@code a=1&amp;b=2} 规范成稳定顺序，避免 {@code b=2&amp;a=1} 导致签名不一致。
+     * <p>
+     * 对照前端：类似自己实现一个稳定的 {@code URLSearchParams} 序列化。
+     */
     public static String canonicalQuery(String queryString) {
         if (queryString == null || queryString.isBlank()) {
             return "";
         }
+        // TreeMap：按 key 字典序；同一 key 多个 value 再各自排序
         Map<String, List<String>> sorted = new TreeMap<>();
         for (String pair : queryString.split("&")) {
             if (pair.isEmpty()) {
@@ -59,11 +69,13 @@ public final class AkSkSigner {
         return sb.toString();
     }
 
+    /** body 的国密 SM3 摘要（hex）。空 body ≠ 不参与签名，而是对 0 字节做 SM3。 */
     public static String bodySm3Hex(byte[] body) {
         byte[] data = body == null ? new byte[0] : body;
         return new SM3().digestHex(data);
     }
 
+    /** 拼出待签串。学习时用 {@code AkSkClientDemo} 打印出来对照最直观。 */
     public static String buildStringToSign(String method,
                                           String path,
                                           String queryString,
@@ -80,11 +92,17 @@ public final class AkSkSigner {
         );
     }
 
+    /**
+     * 用 SK 对 stringToSign 做 HMAC-SM3。
+     * <p>
+     * 注意：这里入参是 SK，但返回的是 signature；网络上只传 signature，不传 SK。
+     */
     public static String sign(String secretKey, String stringToSign) {
         HMac hmac = new HMac(HmacAlgorithm.HmacSM3, secretKey.getBytes(StandardCharsets.UTF_8));
         return hmac.digestHex(stringToSign);
     }
 
+    /** 常量时间友好的 hex 比对（长度不同直接 false；同长度逐字节比）。 */
     public static boolean matches(String expectedHex, String actualHex) {
         if (expectedHex == null || actualHex == null) {
             return false;
