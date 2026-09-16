@@ -12,5 +12,5 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: openapi
       AKSK_ACCESS_KEY: ${AKSK_ACCESS_KEY:-demo-ak-001}
-      AKSK_SECRET_KEY: ${AKSK_SECRET_KEY:-demo-sk-please-change-me}
+      AKSK_SECRET_KEY: ${AKSK_SECRET_KEY:-a8f3K9mQx2Vp7nR4wYcE6uHt1bZs0Ld9}
       AKSK_CLIENT_NAME: ${AKSK_CLIENT_NAME:-demo-client}

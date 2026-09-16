@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
  * 没有分页插件时，{@code selectPage} 不会自动拼 LIMIT。
  */
 @Configuration
-@MapperScan("com.demo")
+@MapperScan("com.demo.user")
 public class MybatisPlusConfig {
 
     @Bean

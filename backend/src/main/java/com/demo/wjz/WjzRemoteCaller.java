@@ -5,15 +5,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /**
  * 直接注入对方 SDK，调用 {@link SignApiService}。
- * 启动后会打一次 ping / echo；对方 8443 不可达时只打日志，不阻断本服务启动。
+ * 需启用 Maven profile {@code -Pwjz-client}，且 {@code wjz.aksk.enabled=true}。
  */
 @Component
+@ConditionalOnClass(SignApiService.class)
+@ConditionalOnProperty(prefix = "wjz.aksk", name = "enabled", havingValue = "true")
 public class WjzRemoteCaller implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(WjzRemoteCaller.class);
