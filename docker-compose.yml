@@ -29,5 +29,25 @@ services:
       timeout: 3s
       retries: 20
 
+  # 后端 API（含 JWT 登录 + 国密 AK/SK 开放接口）
+  # 本地只起基础设施：docker compose up -d mysql redis
+  # 整包上服务器：docker compose up -d --build
+  backend:
+    build: ./backend
+    container_name: demo-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/demo?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+      SPRING_DATASOURCE_USERNAME: demo
+      SPRING_DATASOURCE_PASSWORD: demo123
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   mysql_data:

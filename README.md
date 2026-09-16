@@ -1,14 +1,14 @@
 # backAndFrontDemo
 
-Spring Boot + Vue3 全栈 Demo：用户注册/登录（图形验证码 + Redis）、国密 SM2 JWT（含自动续期）、用户分页与批量删除。
+Spring Boot + Vue3 全栈 Demo：用户注册/登录（图形验证码 + Redis）、国密 SM2 JWT（含自动续期）、用户分页与批量删除、开放 API 的国密 AK/SK（HMAC-SM3）鉴权示例。
 
 ## 技术栈
 
 | 端 | 技术 |
 | --- | --- |
-| 后端 | Java 17+、Spring Boot 3.5、MyBatis-Plus、Flyway、Redisson、Hutool SM2/验证码、BCrypt |
+| 后端 | Java 17+、Spring Boot 3.5、MyBatis-Plus、Flyway、Redisson、Hutool SM2/SM3/验证码、BCrypt |
 | 前端 | Vue 3、Vite、TypeScript、Axios、Element Plus、Vue Router |
-| 基础设施 | MySQL 8、Redis（Docker Compose） |
+| 基础设施 | MySQL 8、Redis、可选后端镜像（Docker Compose） |
 
 ## 环境要求
 
@@ -19,8 +19,10 @@ Spring Boot + Vue3 全栈 Demo：用户注册/登录（图形验证码 + Redis�
 
 ## 1. 启动基础设施
 
+仅 MySQL + Redis（本地用 IDE / Maven 跑后端时）：
+
 ```bash
-docker compose up -d
+docker compose up -d mysql redis
 ```
 
 | 服务 | 地址 | 账号 |
@@ -28,7 +30,7 @@ docker compose up -d
 | MySQL | `localhost:3306`，库名 `demo` | `demo` / `demo123` |
 | Redis | `localhost:6379` | 无密码 |
 
-## 2. 启动后端
+## 2. 启动后端（本地开发）
 
 ```bash
 cd backend
@@ -45,6 +47,7 @@ mvn -s .mvn/settings.xml spring-boot:run
 - 服务：http://localhost:8080
 - 公开接口：`/api/health`、`/api/auth/public-key`、`/api/auth/captcha`、`/api/auth/login`、`/api/auth/register`
 - 需登录：`/api/users`、`/api/auth/me`（Header：`Authorization: Bearer <token>`）
+- 开放 API（AK/SK）：`/api/open/echo`（GET）、`/api/open/message`（POST）
 - Token 临近过期时响应头返回 `X-New-Token` 用于续期
 - 登录/注册的 `password` 为 SM2 密文；落库仍为 BCrypt
 
@@ -59,21 +62,103 @@ pnpm dev       # 或 npm run dev
 - 访问：http://localhost:5173
 - 页面：登录、注册、用户列表（分页 / 批量删除）
 
-## 4. 联调建议
+## 4. 国密 AK/SK 开放 API 示例
+
+与登录 JWT 正交：调用方用 **AccessKey + SecretKey**，以国密 **HMAC-SM3** 对请求签名；**SK 不落网**，只传 AK、时间戳、Nonce、签名。
+
+### 鉴权头
+
+| Header | 说明 |
+| --- | --- |
+| `X-Access-Key` | AK，Demo 默认 `demo-ak-001` |
+| `X-Timestamp` | Unix 秒级时间戳 |
+| `X-Nonce` | 随机串，同一 AK 下不可重复（Redis 防重放） |
+| `X-Signature` | `HMAC-SM3(SK, stringToSign)` 的 hex |
+
+### 待签串
+
+```text
+METHOD\n
+PATH\n
+canonicalQuery\n
+timestamp\n
+nonce\n
+sm3Hex(body)
+```
+
+- `PATH`：不含 query，例如 `/api/open/echo`
+- `canonicalQuery`：query 按 key 排序后的 `k=v&...`；无 query 则为空串
+- `body`：原始字节；GET 无 body 时按空字节做 SM3
+
+Demo 密钥见 `backend/src/main/resources/application.yml` 的 `aksk.clients`。
+
+### 一键调用 Demo
+
+先启动后端，再执行：
+
+```bash
+chmod +x scripts/aksk-demo.sh
+./scripts/aksk-demo.sh
+# 或指定地址与密钥：
+# ./scripts/aksk-demo.sh http://localhost:8080 demo-ak-001 demo-sk-please-change-me
+```
+
+等价 Maven 命令：
+
+```bash
+cd backend
+./mvnw -q exec:java \
+  -Dexec.classpathScope=compile \
+  -Dexec.mainClass=com.demo.aksk.AkSkClientDemo \
+  -Dexec.args="http://localhost:8080 demo-ak-001 demo-sk-please-change-me"
+```
+
+成功时 GET / POST 都会返回 `code: 0` 的 JSON。
+
+### 接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/open/echo?name=world` | 回显参数与调用方名称 |
+| POST | `/api/open/message` | Body：`{"title":"...","content":"..."}` |
+
+概念说明见 [backend/ak和sk.md](backend/ak和sk.md)。
+
+## 5. Docker Compose 整包（上服务器）
+
+仓库已带 `backend/Dockerfile` 与 compose 中的 `backend` 服务。把整仓拷到服务器后：
+
+```bash
+docker compose up -d --build
+```
+
+会启动 MySQL、Redis、后端（映射 `8080`）。服务器上验证：
+
+```bash
+curl http://localhost:8080/api/health
+./scripts/aksk-demo.sh http://localhost:8080
+```
+
+本地开发仍可只起依赖：`docker compose up -d mysql redis`，后端用 Maven 跑。
+
+## 6. 联调建议
 
 1. 打开注册页创建用户（需图形验证码）
 2. 登录后进入用户列表
 3. 勾选用户可批量删除
+4. 用 `scripts/aksk-demo.sh` 验证开放 API 签名
 
 ## 后端关键设计
 
 详细目录、请求链路、接口清单与学习阅读顺序见 **[backend/README.md](backend/README.md)**。
 
 - **过滤器** `JwtAuthFilter`：解析 JWT，写入 ThreadLocal，必要时写 `X-New-Token`
-- **拦截器** `AuthInterceptor`：白名单外必须登录
+- **过滤器** `AkSkAuthFilter`：`/api/open/**` 上做 HMAC-SM3 验签 + 时间窗 + Nonce
+- **拦截器** `AuthInterceptor`：白名单 / 开放 API 前缀外必须登录
 - **AOP** `@OperLog`：记录用户操作日志
 - **全局异常** `GlobalExceptionHandler` + `BizException`
 - **参数校验** Jakarta Validation（`@Valid` / `@NotBlank` 等）
 - **当前用户** `SecurityUtils.getCurrentUser()`
 - **密码** 传输 SM2 加密，落库 BCrypt
 - **JWT** 国密 SM2 签名，claims 含 `userId`、`username`
+- **开放 API** 国密 HMAC-SM3 的 AK/SK 签名

@@ -14,8 +14,10 @@ import java.util.Set;
 /**
  * Spring MVC 拦截器：保护业务接口。
  * <p>
- * 白名单（健康检查、验证码、公钥、登录、注册）直接放行；
+ * 白名单（健康检查、验证码、公钥、登录、注册）以及开放 API 前缀 {@code /api/open/**} 直接放行；
  * 其它路径必须已在 Filter 里解析出登录用户，否则返回统一 JSON「未登录」。
+ * <p>
+ * 开放 API 的鉴权由 {@code AkSkAuthFilter}（HMAC-SM3）负责，不依赖 JWT。
  * <p>
  * 对照前端：类似 Vue Router 的 {@code beforeEach} 守卫。
  */
@@ -30,6 +32,9 @@ public class AuthInterceptor implements HandlerInterceptor {
             "/api/auth/register"
     );
 
+    /** 开放 API：由 AkSkAuthFilter 做 HMAC-SM3 验签，不走 JWT */
+    private static final String OPEN_API_PREFIX = "/api/open/";
+
     private final ObjectMapper objectMapper;
 
     public AuthInterceptor(ObjectMapper objectMapper) {
@@ -43,7 +48,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
         String path = request.getRequestURI();
-        if (WHITE_LIST.contains(path)) {
+        if (WHITE_LIST.contains(path) || path.startsWith(OPEN_API_PREFIX)) {
             return true;
         }
         if (SecurityUtils.getCurrentUserOrNull() != null) {

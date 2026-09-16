@@ -39,3 +39,11 @@ captcha:
   width: 130
   height: 48
   code-count: 4
+
+# 开放 API：AK/SK + 国密 HMAC-SM3（生产请外置并轮换）
+aksk:
+  skew-seconds: 300
+  clients:
+    - access-key: demo-ak-001
+      secret-key: demo-sk-please-change-me
+      name: demo-client
