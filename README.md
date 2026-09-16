@@ -156,9 +156,9 @@ mfxApiService.post("/api/open/message", "{\"title\":\"ping\",\"content\":\"from-
 
 完整对接文档（坐标、Nexus 仓库、发布步骤）见 [mfx-spring-boot-starter/README.md](mfx-spring-boot-starter/README.md)。
 
-## 6. 无源码部署到服务器（镜像包）
+## 6. 无源码部署到服务器（开放 API 测试镜像）
 
-服务器**不要拷源码**，也不要 `docker compose --build`。本机打镜像 tar，服务器 `docker load`。
+服务器**不要拷源码**。本机只打 **backend** 镜像（不含 MySQL/Redis，体积小），服务器 `docker load` 后单容器运行开放接口。
 
 ### 本机打包
 
@@ -167,41 +167,27 @@ chmod +x scripts/pack-images.sh deploy/load-and-up.sh
 ./scripts/pack-images.sh
 ```
 
-生成 `deploy/demo-images.tar`（含 `demo-backend:0.0.1`、`mysql:8.0`、`redis:7`）。
+生成 `deploy/demo-images.tar`（仅 `demo-backend:0.0.1`）。
 
-拷到服务器（仅这些文件，不要拷 `backend/src`）：
+拷到服务器：
 
 - `deploy/demo-images.tar`
 - `deploy/docker-compose.yml`
-- `deploy/.env.example`（或已填好的 `.env`）
+- `deploy/.env.example`
 - `deploy/load-and-up.sh`
-
-```bash
-scp deploy/demo-images.tar deploy/docker-compose.yml deploy/.env.example deploy/load-and-up.sh user@SERVER:/opt/demo/
-```
 
 ### 服务器启动
 
 ```bash
 cd /opt/demo
-chmod +x load-and-up.sh
 ./load-and-up.sh
-# 或：docker load -i demo-images.tar && cp .env.example .env && vim .env && docker compose up -d
-```
-
-- 防火墙只开 **8080**
-- MySQL / Redis **不**映射到宿主机
-- 改 `.env` 里的 `AKSK_SECRET_KEY`、`MYSQL_PASSWORD`（与调用方 SDK 的 SK 一致）
-
-验活：
-
-```bash
+# 编辑 .env 中 AKSK_SECRET_KEY
 curl http://127.0.0.1:8080/api/health
-# 本机对服务器
-./scripts/aksk-demo.sh http://<服务器IP>:8080 <AK> <SK>
 ```
 
-本地开发仍可：`docker compose up -d mysql redis`，后端用 Maven 跑。根目录 compose 仅用于开发构建，不要拿到服务器去 `--build`。
+详细步骤见 [deploy/README.md](deploy/README.md)。
+
+本地完整开发（含 MySQL/Redis）：`docker compose up -d mysql redis`，后端 Maven 跑。
 
 ### 给调用方
 

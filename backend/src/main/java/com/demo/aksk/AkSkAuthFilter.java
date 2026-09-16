@@ -6,8 +6,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.redisson.api.RBucket;
-import org.redisson.api.RedissonClient;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
@@ -52,14 +50,14 @@ public class AkSkAuthFilter extends OncePerRequestFilter {
     public static final String ATTR_CLIENT_NAME = "aksk.clientName";
 
     private final AkSkProperties properties;
-    private final RedissonClient redissonClient;
+    private final NonceStore nonceStore;
     private final ObjectMapper objectMapper;
     /** AK → 客户端配置，避免每次线性扫列表 */
     private final Map<String, AkSkProperties.Client> clientIndex = new ConcurrentHashMap<>();
 
-    public AkSkAuthFilter(AkSkProperties properties, RedissonClient redissonClient, ObjectMapper objectMapper) {
+    public AkSkAuthFilter(AkSkProperties properties, NonceStore nonceStore, ObjectMapper objectMapper) {
         this.properties = properties;
-        this.redissonClient = redissonClient;
+        this.nonceStore = nonceStore;
         this.objectMapper = objectMapper;
         rebuildIndex();
     }
@@ -140,8 +138,7 @@ public class AkSkAuthFilter extends OncePerRequestFilter {
 
         // 防重放：同一个 AK + Nonce 在时间窗内只能成功一次
         String nonceKey = "aksk:nonce:" + accessKey + ":" + nonce;
-        RBucket<String> bucket = redissonClient.getBucket(nonceKey);
-        boolean firstUse = bucket.setIfAbsent("1", Duration.ofSeconds(properties.getSkewSeconds()));
+        boolean firstUse = nonceStore.tryAcquire(nonceKey, Duration.ofSeconds(properties.getSkewSeconds()));
         if (!firstUse) {
             throw new AkSkAuthException(401, "Nonce 已使用，疑似重放");
         }

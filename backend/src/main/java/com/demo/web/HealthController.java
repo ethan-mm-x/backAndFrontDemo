@@ -3,6 +3,7 @@ package com.demo.web;
 import com.demo.common.ApiResult;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,9 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 健康检查：确认应用存活，并写一条 Redis 证明 Redisson 连通。
- * <p>
- * 路径在登录白名单内，无需 Token。
+ * 健康检查：确认应用存活；有 Redis 时顺带 ping。
  */
 @RestController
 @RequestMapping("/api")
@@ -22,17 +21,22 @@ public class HealthController {
 
     private final RedissonClient redissonClient;
 
-    public HealthController(RedissonClient redissonClient) {
-        this.redissonClient = redissonClient;
+    public HealthController(ObjectProvider<RedissonClient> redissonClient) {
+        this.redissonClient = redissonClient.getIfAvailable();
     }
 
     @GetMapping("/health")
     public ApiResult<Map<String, String>> health() {
-        RBucket<String> bucket = redissonClient.getBucket("demo:health");
-        bucket.set("PONG", Duration.ofSeconds(30));
         Map<String, String> body = new LinkedHashMap<>();
         body.put("status", "ok");
-        body.put("redis", bucket.get());
+        if (redissonClient != null) {
+            RBucket<String> bucket = redissonClient.getBucket("demo:health");
+            bucket.set("PONG", Duration.ofSeconds(30));
+            body.put("redis", bucket.get());
+        } else {
+            body.put("redis", "skipped");
+            body.put("mode", "openapi-lite");
+        }
         return ApiResult.ok(body);
     }
 }
