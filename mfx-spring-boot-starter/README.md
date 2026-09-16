@@ -2,6 +2,8 @@
 
 Spring Boot **3.2.4** Starter：封装符合本仓库开放 API 约定的 **国密 AK/SK（HMAC-SM3）** HTTP 客户端，提供可注入的 `MfxApiService`。
 
+**给对接方看的调用说明（GET / POST）：** 见 **[使用说明.md](使用说明.md)**。
+
 ## Maven 坐标
 
 | 项 | 值 |
