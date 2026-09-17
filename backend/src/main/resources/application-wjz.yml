@@ -1,0 +1,11 @@
+# 启用方式：./mvnw -Pwjz-client spring-boot:run -Dspring-boot.run.profiles=openapi,wjz
+# openapi：无 MySQL/Redis；wjz：打开对方 SDK 调用
+wjz:
+  aksk:
+    enabled: true
+    access-key: ak-demo-001
+    secret-key: sk-demo-secret-please-change
+    base-url: https://172.16.22.152:8443
+    skip-ssl-verify: true
+    connect-timeout-ms: 5000
+    read-timeout-ms: 15000

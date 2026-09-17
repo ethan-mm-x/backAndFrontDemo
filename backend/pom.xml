@@ -22,6 +22,8 @@
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
         <redisson.version>3.52.0</redisson.version>
         <hutool.version>5.8.36</hutool.version>
+        <!-- 默认排除 WJZ 调用方；-Pwjz-client 会改成不匹配任何文件 -->
+        <wjz.compile.exclude>**/wjz/**</wjz.compile.exclude>
     </properties>
 
     <dependencies>
@@ -109,10 +111,13 @@
         </dependency>
     </dependencies>
 
-    <!-- 本地调对方 WJZ API 时启用：./mvnw -Pwjz-client spring-boot:run -->
+    <!-- 本地调对方 WJZ API 时启用：./mvnw -Pwjz-client spring-boot:run -Dspring-boot.run.profiles=openapi,wjz -->
     <profiles>
         <profile>
             <id>wjz-client</id>
+            <properties>
+                <wjz.compile.exclude>__never_match_wjz__</wjz.compile.exclude>
+            </properties>
             <repositories>
                 <repository>
                     <id>snapshots</id>
@@ -132,17 +137,6 @@
                     <version>1.0.0-SNAPSHOT</version>
                 </dependency>
             </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration combine.self="override">
-                            <excludes combine.self="override"/>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 
@@ -157,13 +151,14 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
             </plugin>
-            <!-- 默认不编译 WJZ 调用方（避免 Docker 构建依赖公司 Nexus） -->
+            <!-- 默认不编译 WJZ 调用方（避免 Docker 构建依赖公司 Nexus）；-Pwjz-client 覆盖 exclude -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <parameters>true</parameters>
                     <excludes>
-                        <exclude>**/wjz/**</exclude>
+                        <exclude>${wjz.compile.exclude}</exclude>
                     </excludes>
                 </configuration>
             </plugin>

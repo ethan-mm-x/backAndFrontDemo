@@ -49,7 +49,7 @@ public class WjzRemoteCaller implements ApplicationRunner {
             log.info("WJZ echo => {}", echo);
             System.out.println("WJZ echo => " + echo);
         } catch (Exception e) {
-            log.warn("WJZ 调用失败（对方 https://172.16.22.148:8443 可能未就绪）: {}", e.toString());
+            log.warn("WJZ 调用失败（对方 https://172.16.22.152:8443 可能未就绪）: {}", e.toString());
             System.out.println("WJZ 调用失败: " + e.getMessage());
         }
     }
