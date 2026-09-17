@@ -1,11 +1,27 @@
-# 启用方式：./mvnw -Pwjz-client spring-boot:run -Dspring-boot.run.profiles=openapi,wjz
-# openapi：无 MySQL/Redis；wjz：打开对方 SDK 调用
+# =============================================================================
+# WJZ 调用方配置（Spring profile = wjz）
+# =============================================================================
+# 启用方式（二选一）：
+#   ./scripts/wjz-client-demo.sh
+#   cd backend && ./mvnw -Pwjz-client spring-boot:run -Dspring-boot.run.profiles=openapi,wjz
+#
+# 对照前端：这整段 ≈ axios.create({ baseURL, timeout, ... }) + 拦截器要用的 AK/SK。
+# SK 只放服务端配置，千万别写进浏览器前端。
+#
+# 若本机开了 HTTPS 代理，访问内网 8443 可能被拦，启动前建议：
+#   export NO_PROXY='*' https_proxy= http_proxy=
+# =============================================================================
+
 wjz:
   aksk:
+    # false 时对方 SDK / 本包 com.demo.wjz.* 相关 Bean 不加载
     enabled: true
+    # 对方分配的 AccessKey / SecretKey（演示值，生产请替换）
     access-key: ak-demo-001
     secret-key: sk-demo-secret-please-change
+    # 对方 API 根地址（只 HTTPS；路径由代码里的 /api/demo/... 拼接）
     base-url: https://172.16.22.152:8443
+    # 自签证书必须 true；正式 CA 证书改为 false
     skip-ssl-verify: true
     connect-timeout-ms: 5000
     read-timeout-ms: 15000
